@@ -1,42 +1,45 @@
 # OTP Service API
 
-A FastAPI server that provides OTP (One-Time Password) functionality with support for both SMS (via Twilio) and email delivery.
+A FastAPI server that provides OTP (One-Time Password) functionality with SMS delivery via Twilio. The service uses a user database lookup system to automatically retrieve phone numbers for registered users.
 
 ## Features
 
 - 🚀 FastAPI-based REST API
 - 📱 SMS OTP delivery via Twilio
-- 📧 Email OTP delivery via SMTP
+- 👤 User database lookup for phone numbers
 - 🔒 Secure OTP storage with Redis (fallback to in-memory)
 - ⏰ Configurable OTP expiration (default: 5 minutes)
 - 🛡️ Rate limiting with attempt tracking
 - 📊 Comprehensive error handling and validation
+- 🔄 Case-insensitive user ID handling
 
 ## API Endpoints
 
 ### 1. Send OTP Code
 **POST** `/send-code`
 
-Send an OTP code to a user via SMS or email.
+Send an OTP code to a user via SMS. The system automatically looks up the user's phone number from the database.
 
 **Request Body:**
 ```json
 {
-  "user_id": "user123",
-  "method": "sms",  // "sms" or "email"
-  "phone": "+1234567890",  // required for SMS
-  "email": "user@example.com"  // required for email
+  "user_id": "abc"
 }
 ```
 
 **Response:**
 ```json
 {
-  "message": "OTP sent successfully via sms",
-  "user_id": "user123",
-  "method": "sms"
+  "message": "OTP sent successfully via SMS",
+  "user_id": "abc",
+  "phone": "+11111111111"
 }
 ```
+
+**Error Responses:**
+- `404`: User not found in database
+- `404`: Phone number not found for user
+- `500`: Failed to send SMS
 
 ### 2. Verify OTP Code
 **POST** `/verify-code`
@@ -46,7 +49,7 @@ Verify the OTP code provided by the user.
 **Request Body:**
 ```json
 {
-  "user_id": "user123",
+  "user_id": "abc",
   "passcode": "123456"
 }
 ```
@@ -56,7 +59,7 @@ Verify the OTP code provided by the user.
 {
   "success": true,
   "message": "OTP verified successfully",
-  "user_id": "user123"
+  "user_id": "abc"
 }
 ```
 
@@ -66,7 +69,7 @@ Verify the OTP code provided by the user.
 
 ```bash
 git clone <your-repo-url>
-cd opt-server
+cd otp-server
 pip install -r requirements.txt
 ```
 
@@ -86,12 +89,6 @@ TWILIO_ACCOUNT_SID=your_actual_account_sid
 TWILIO_AUTH_TOKEN=your_actual_auth_token
 TWILIO_PHONE_NUMBER=+1234567890
 
-# Email Configuration (for email OTP)
-SMTP_SERVER=smtp.gmail.com
-SMTP_PORT=587
-EMAIL_ADDRESS=your_email@gmail.com
-EMAIL_PASSWORD=your_app_password
-
 # Redis Configuration (optional)
 REDIS_HOST=localhost
 REDIS_PORT=6379
@@ -106,13 +103,12 @@ REDIS_DB=0
 3. Purchase a phone number or use the trial number
 4. Add credentials to your `.env` file
 
-#### Email Setup (for Gmail)
-1. Enable 2-Factor Authentication on your Gmail account
-2. Generate an App Password:
-   - Go to Google Account settings
-   - Security → 2-Step Verification → App passwords
-   - Generate a password for "Mail"
-3. Use your Gmail address and the app password in `.env`
+#### User Database Setup
+The service includes a mock database (`mock_database.py`) with user-to-phone number mappings. Currently configured user:
+- User ID: `abc`
+- Phone: `+11111111111`
+
+To add more users, edit the `USER_PHONE_DATABASE` dictionary in `mock_database.py`.
 
 #### Redis Setup (optional)
 ```bash
@@ -150,21 +146,17 @@ The API will be available at:
 curl -X POST "http://localhost:8000/send-code" \
      -H "Content-Type: application/json" \
      -d '{
-       "user_id": "user123",
-       "method": "sms",
-       "phone": "+1234567890"
+       "user_id": "abc"
      }'
 ```
 
-### Send Email OTP
-```bash
-curl -X POST "http://localhost:8000/send-code" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "user_id": "user123",
-       "method": "email",
-       "email": "user@example.com"
-     }'
+**Response:**
+```json
+{
+  "message": "OTP sent successfully via SMS",
+  "user_id": "abc",
+  "phone": "+11111111111"
+}
 ```
 
 ### Verify OTP
@@ -172,9 +164,18 @@ curl -X POST "http://localhost:8000/send-code" \
 curl -X POST "http://localhost:8000/verify-code" \
      -H "Content-Type: application/json" \
      -d '{
-       "user_id": "user123",
+       "user_id": "abc",
        "passcode": "123456"
      }'
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "OTP verified successfully",
+  "user_id": "abc"
+}
 ```
 
 ## Security Features
@@ -187,18 +188,22 @@ curl -X POST "http://localhost:8000/verify-code" \
 ## Error Handling
 
 The API provides comprehensive error messages for various scenarios:
-- Invalid or missing credentials
+- User not found in database (404)
+- Phone number not found for user (404)
+- Invalid or missing Twilio credentials (500)
 - Expired OTPs
 - Too many failed attempts
-- Service configuration issues
-- Network/delivery failures
+- SMS delivery failures
+- Network/service issues
 
 ## Development
 
 ### Project Structure
 ```
-opt-server/
-├── main.py              # Main FastAPI application
+otp-server/
+├── main.py              # Main FastAPI application and API endpoints
+├── otp_service.py       # OTP service class with SMS/storage functionality
+├── mock_database.py     # Mock user database for phone number lookup
 ├── requirements.txt     # Python dependencies
 ├── env.example         # Environment variables template
 └── README.md           # This file
@@ -210,7 +215,3 @@ You can test the endpoints using:
 - FastAPI's built-in docs at `/docs`
 - Postman or similar API testing tools
 - curl commands as shown in the examples above
-
-## License
-
-This project is open source and available under the [MIT License](LICENSE).
