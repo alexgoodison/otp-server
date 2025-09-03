@@ -65,11 +65,9 @@ Verify the OTP code provided by the user.
 
 ## Setup Instructions
 
-### 1. Clone and Install Dependencies
+### 1. Install Dependencies
 
 ```bash
-git clone <your-repo-url>
-cd otp-server
 pip install -r requirements.txt
 ```
 
@@ -139,6 +137,37 @@ The API will be available at:
 - **Interactive Docs**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 
+## Updating the Mock Database
+
+The service uses a mock database (`mock_database.py`) to store user information. To add or modify users:
+
+### Adding New Users
+
+1. Open `mock_database.py`
+2. Edit the `USER_PHONE_DATABASE` dictionary:
+
+```python
+USER_PHONE_DATABASE = {
+    "abc": "+11111111111",
+    "user456": "+12345678901",
+    "john_doe": "+19876543210",
+    # Add more users as needed
+}
+```
+
+### Database Structure
+
+Each entry in the database maps a `user_id` to a phone number:
+- **Key**: `user_id` (string) - The unique identifier for the user
+- **Value**: `phone` (string) - The phone number in E.164 format (e.g., `+1234567890`)
+
+### Important Notes
+
+- **Phone Format**: Use E.164 format with country code (e.g., `+1` for US)
+- **User IDs**: Are case-insensitive (automatically converted to lowercase)
+- **Restart Required**: After modifying the database, restart the server to apply changes
+
+
 ## Usage Examples
 
 ### Send SMS OTP
@@ -177,24 +206,6 @@ curl -X POST "http://localhost:8000/verify-code" \
   "user_id": "abc"
 }
 ```
-
-## Security Features
-
-- **Expiration**: OTPs expire after 5 minutes
-- **Rate Limiting**: Maximum 3 verification attempts per OTP
-- **Secure Storage**: OTPs are stored securely and deleted after verification
-- **Input Validation**: All inputs are validated using Pydantic models
-
-## Error Handling
-
-The API provides comprehensive error messages for various scenarios:
-- User not found in database (404)
-- Phone number not found for user (404)
-- Invalid or missing Twilio credentials (500)
-- Expired OTPs
-- Too many failed attempts
-- SMS delivery failures
-- Network/service issues
 
 ## Development
 

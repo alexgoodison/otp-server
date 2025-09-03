@@ -2,9 +2,6 @@ import os
 import random
 import string
 from datetime import datetime, timedelta
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from twilio.rest import Client
 import redis
 import json
@@ -27,12 +24,6 @@ class OTPService:
         self.twilio_account_sid = os.getenv("TWILIO_ACCOUNT_SID")
         self.twilio_auth_token = os.getenv("TWILIO_AUTH_TOKEN")
         self.twilio_phone_number = os.getenv("TWILIO_PHONE_NUMBER")
-        
-        # Email configuration
-        self.smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-        self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
-        self.email_address = os.getenv("EMAIL_ADDRESS")
-        self.email_password = os.getenv("EMAIL_PASSWORD")
         
         # Initialize Twilio client if credentials are available
         if self.twilio_account_sid and self.twilio_auth_token:
@@ -78,7 +69,7 @@ class OTPService:
             raise HTTPException(status_code=500, detail="Twilio not configured")
         
         try:
-            message = self.twilio_client.messages.create(
+            self.twilio_client.messages.create(
                 body=f"Your verification code is: {otp}. This code expires in 5 minutes.",
                 from_=self.twilio_phone_number,
                 to=phone
@@ -86,41 +77,6 @@ class OTPService:
             return True
         except Exception as e:
             print(f"SMS sending failed: {e}")
-            return False
-    
-    def send_email(self, email: str, otp: str) -> bool:
-        """Send OTP via email"""
-        if not self.email_address or not self.email_password:
-            raise HTTPException(status_code=500, detail="Email not configured")
-        
-        try:
-            msg = MIMEMultipart()
-            msg['From'] = self.email_address
-            msg['To'] = email
-            msg['Subject'] = "Your Verification Code"
-            
-            body = f"""
-            <html>
-                <body>
-                    <h2>Verification Code</h2>
-                    <p>Your verification code is: <strong>{otp}</strong></p>
-                    <p>This code expires in 5 minutes.</p>
-                    <p>If you didn't request this code, please ignore this email.</p>
-                </body>
-            </html>
-            """
-            
-            msg.attach(MIMEText(body, 'html'))
-            
-            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
-            server.starttls()
-            server.login(self.email_address, self.email_password)
-            server.send_message(msg)
-            server.quit()
-            
-            return True
-        except Exception as e:
-            print(f"Email sending failed: {e}")
             return False
     
     def verify_otp(self, user_id: str, provided_code: str) -> tuple[bool, str]:
