@@ -76,15 +76,37 @@ async def verify_code(request: VerifyCodeRequest):
     print("Received OTP verification request for user_id: ", request.user_id, " passcode: ", request.passcode)
 
     user_id = request.user_id.lower()
-    success, message = otp_service.verify_otp(user_id, request.passcode)
+    success, message, error_type = otp_service.verify_otp(user_id, request.passcode)
 
-    print("OTP verification request for user_id: ", user_id, " success: ", success)
+    print("OTP verification request for user_id: ", user_id, " success: ", success, " error_type: ", error_type)
     
-    return VerifyCodeResponse(
-        success=success,
-        message=message,
-        user_id=user_id
-    )
+    # Return appropriate HTTP status codes based on error type
+    if success:
+        return VerifyCodeResponse(
+            success=success,
+            message=message,
+            user_id=user_id
+        )
+    else:
+        # Map error types to appropriate HTTP status codes
+        status_code_map = {
+            "not_found": 404,        # OTP not found or expired
+            "expired": 410,          # Gone - OTP has expired
+            "too_many_attempts": 429, # Too Many Requests - rate limited
+            "invalid_code": 400      # Bad Request - wrong code
+        }
+        
+        status_code = status_code_map.get(error_type, 400)
+        
+        raise HTTPException(
+            status_code=status_code,
+            detail={
+                "success": False,
+                "message": message,
+                "user_id": user_id,
+                "error_type": error_type
+            }
+        )
 
 if __name__ == "__main__":
     import uvicorn

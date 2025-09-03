@@ -79,28 +79,32 @@ class OTPService:
             print(f"SMS sending failed: {e}")
             return False
     
-    def verify_otp(self, user_id: str, provided_code: str) -> tuple[bool, str]:
-        """Verify the provided OTP code"""
+    def verify_otp(self, user_id: str, provided_code: str) -> tuple[bool, str, str]:
+        """
+        Verify the provided OTP code
+        Returns: (success, message, error_type)
+        error_type can be: 'success', 'not_found', 'expired', 'too_many_attempts', 'invalid_code'
+        """
         otp_data = self.get_otp(user_id)
         
         if not otp_data:
-            return False, "No OTP found for this user or OTP has expired"
+            return False, "No OTP found for this user or OTP has expired", "not_found"
         
         # Check if OTP has expired
         expires_at = datetime.fromisoformat(otp_data["expires_at"])
         if datetime.now() > expires_at:
             self.delete_otp(user_id)
-            return False, "OTP has expired"
+            return False, "OTP has expired", "expired"
         
         # Check attempt limit
         if otp_data["attempts"] >= 3:
             self.delete_otp(user_id)
-            return False, "Too many failed attempts"
+            return False, "Too many failed attempts", "too_many_attempts"
         
         # Verify the code
         if otp_data["code"] == provided_code:
             self.delete_otp(user_id)
-            return True, "OTP verified successfully"
+            return True, "OTP verified successfully", "success"
         else:
             # Increment attempts
             otp_data["attempts"] += 1
@@ -111,4 +115,4 @@ class OTPService:
                 otp_storage[user_id] = otp_data
             
             remaining_attempts = 3 - otp_data["attempts"]
-            return False, f"Invalid OTP. {remaining_attempts} attempts remaining"
+            return False, f"Invalid OTP. {remaining_attempts} attempts remaining", "invalid_code"

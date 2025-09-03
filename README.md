@@ -54,12 +54,61 @@ Verify the OTP code provided by the user.
 }
 ```
 
-**Response:**
+**Success Response (200):**
 ```json
 {
   "success": true,
   "message": "OTP verified successfully",
   "user_id": "abc"
+}
+```
+
+**Error Responses:**
+- `400` (Bad Request) - Invalid OTP code:
+```json
+{
+  "detail": {
+    "success": false,
+    "message": "Invalid OTP. 2 attempts remaining",
+    "user_id": "abc",
+    "error_type": "invalid_code"
+  }
+}
+```
+
+- `404` (Not Found) - OTP not found:
+```json
+{
+  "detail": {
+    "success": false,
+    "message": "No OTP found for this user or OTP has expired",
+    "user_id": "abc",
+    "error_type": "not_found"
+  }
+}
+```
+
+- `410` (Gone) - OTP expired:
+```json
+{
+  "detail": {
+    "success": false,
+    "message": "OTP has expired",
+    "user_id": "abc",
+    "error_type": "expired"
+  }
+}
+```
+
+- `429` (Too Many Requests) - Too many failed attempts:
+```json
+{
+  "detail": {
+    "success": false,
+    "message": "Too many failed attempts",
+    "user_id": "abc",
+    "error_type": "too_many_attempts"
+  }
 }
 ```
 
@@ -198,12 +247,24 @@ curl -X POST "http://localhost:8000/verify-code" \
      }'
 ```
 
-**Response:**
+**Success Response (200):**
 ```json
 {
   "success": true,
   "message": "OTP verified successfully",
   "user_id": "abc"
+}
+```
+
+**Error Response Example (400 for invalid code):**
+```json
+{
+  "detail": {
+    "success": false,
+    "message": "Invalid OTP. 2 attempts remaining",
+    "user_id": "abc",
+    "error_type": "invalid_code"
+  }
 }
 ```
 
