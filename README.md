@@ -205,8 +205,8 @@ otp-server/
 ├── otp_service.py       # OTP service class with SMS/storage functionality
 ├── mock_database.py     # Mock user database for phone number lookup
 ├── requirements.txt     # Python dependencies
-├── env.example         # Environment variables template
-└── README.md           # This file
+├── env.example          # Environment variables template
+└── README.md            # This file
 ```
 
 ### Testing
