@@ -186,6 +186,88 @@ The API will be available at:
 - **Interactive Docs**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 
+### 5. Expose Server to Internet with ngrok (Optional)
+
+To make your local server accessible from the internet (useful for webhook testing, mobile app development, or sharing with others), you can use ngrok:
+
+#### Install ngrok
+
+**macOS (using Homebrew):**
+```bash
+brew install ngrok
+```
+
+**Windows/Linux:**
+1. Download from [ngrok.com](https://ngrok.com/download)
+2. Extract and add to your PATH
+
+#### Setup ngrok Account (Optional but Recommended)
+1. Sign up at [ngrok.com](https://ngrok.com/)
+2. Get your authtoken from the dashboard
+3. Configure ngrok with your authtoken:
+```bash
+ngrok config add-authtoken YOUR_AUTHTOKEN
+```
+
+#### Expose Your Server
+
+1. **Start your OTP server first:**
+```bash
+python main.py
+```
+
+2. **In a new terminal, start ngrok:**
+```bash
+# Expose port 8000 with HTTP tunnel
+ngrok http 8000
+
+# Or with a custom subdomain (requires paid plan)
+ngrok http --subdomain=my-otp-server 8000
+```
+
+3. **ngrok will provide you with public URLs:**
+```
+Session Status                online
+Account                       your-email@example.com
+Version                       3.x.x
+Region                        United States (us)
+Latency                       -
+Web Interface                 http://127.0.0.1:4040
+Forwarding                    https://abc123.ngrok.io -> http://localhost:8000
+Forwarding                    http://abc123.ngrok.io -> http://localhost:8000
+
+Connections                   ttl     opn     rt1     rt5     p50     p90
+                              0       0       0.00    0.00    0.00    0.00
+```
+
+#### Using the Public URLs
+
+Once ngrok is running, you can access your API using the provided URLs:
+
+- **API**: https://abc123.ngrok.io
+- **Interactive Docs**: https://abc123.ngrok.io/docs
+- **ReDoc**: https://abc123.ngrok.io/redoc
+
+#### Example API Calls with ngrok
+
+```bash
+# Send OTP using the ngrok URL
+curl -X POST "https://abc123.ngrok.io/send-code" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "user_id": "abc"
+     }'
+
+# Verify OTP using the ngrok URL
+curl -X POST "https://abc123.ngrok.io/verify-code" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "user_id": "abc",
+       "passcode": "123456"
+     }'
+```
+```
+
 ## Updating the Mock Database
 
 The service uses a mock database (`mock_database.py`) to store user information. To add or modify users:
