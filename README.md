@@ -266,7 +266,6 @@ curl -X POST "https://abc123.ngrok.io/verify-code" \
        "passcode": "123456"
      }'
 ```
-```
 
 ## Updating the Mock Database
 
